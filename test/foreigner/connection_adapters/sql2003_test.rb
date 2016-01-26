@@ -142,7 +142,7 @@ class Foreigner::Sql2003Test < Foreigner::UnitTest
     end
   end
 
-  test 'when add_foreign_key is used in conjunction with Apartment (and schema is default_schema) it skips adding foreign key' do
+  test 'when add_foreign_key is used in conjunction with Apartment (and schema is default_schema) it skips adding foreign key if it already exist' do
     begin
       class ::Apartment
         def self.default_schema
