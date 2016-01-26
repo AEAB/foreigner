@@ -86,8 +86,20 @@ module Foreigner
         end
       end
 
-      def remove_foreign_key(table, options)
-        execute "ALTER TABLE #{quote_proper_table_name(table)} #{remove_foreign_key_sql(table, options)}"
+      def remove_foreign_key(from_table, options)
+        unless skip_remove_foreign_key?(from_table, options)
+          execute "ALTER TABLE #{quote_proper_table_name(from_table)} #{remove_foreign_key_sql(from_table, options)}"
+        end
+      end
+
+      # Retain original functionality -- do not skip remove_foreign_key if Apartment is not even present
+      # Apartment functionality:
+      #  - Skip remove_foreign_key if schema name is specified, equal to 'public' schema, and foreign_key does not exists
+      def skip_remove_foreign_key?(from_table, options)
+        return false unless Object.const_defined?(:Apartment)
+
+        _table_name, schema_name, _namespace_name = get_db_object_names(from_table)
+        schema_name && schema_name == Apartment.default_schema && !foreign_key_exists?(from_table, options)
       end
 
       def remove_foreign_key_sql(table, options)

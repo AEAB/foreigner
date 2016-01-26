@@ -188,6 +188,36 @@ class Foreigner::Sql2003Test < Foreigner::UnitTest
     end
   end
 
+  test 'when remove_foreign_key is used in conjunction with Apartment (and schema is default_schema) it skips removing foreign key if it does not exist' do
+    begin
+      class ::Apartment
+        def self.default_schema
+          'public'
+        end
+      end
+
+      assert_equal(
+        "ALTER TABLE `roles_users` DROP CONSTRAINT `roles_users_role_id_fk`",
+        @adapter.remove_foreign_key('roles_users', :column => 'role_id')
+      )
+
+      @adapter.expects(:foreign_key_exists?).with('public.roles_users', { :column => "role_id" }).at_least_once.returns(true)
+      assert_equal(
+        "ALTER TABLE `public`.`roles_users` DROP CONSTRAINT `public.roles_users_role_id_fk`",
+        @adapter.remove_foreign_key('public.roles_users', :column => 'role_id')
+      )
+
+      @adapter.expects(:foreign_key_exists?).with('public.roles_users', { :column => "role_id" }).at_least_once.returns(false)
+      assert_equal(
+        nil,
+        @adapter.remove_foreign_key('public.roles_users', :column => 'role_id')
+      )
+
+    ensure
+      Object.send(:remove_const, :Apartment)
+    end
+  end
+
   test 'remove_by_table' do
     assert_equal(
       "ALTER TABLE `suppliers` DROP CONSTRAINT `suppliers_company_id_fk`",
